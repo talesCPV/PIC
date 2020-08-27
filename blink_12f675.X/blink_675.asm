@@ -1,0 +1,110 @@
+
+; PIC12F675 Configuration Bit Settings
+
+; Assembly source line config statements
+
+#include "p12f675.inc"
+
+; CONFIG
+; __config 0x3185
+ __CONFIG _FOSC_INTRCCLK & _WDTE_OFF & _PWRTE_ON & _MCLRE_OFF & _BOREN_OFF & _CP_OFF & _CPD_OFF
+ 
+; PAGINAÇÃO DE MEMORIA
+ 
+ #DEFINE	BANK0	BCF STATUS,RP0	    ;BANCO 0 DE MEMÓRIA
+ #DEFINE	BANK1	BSF STATUS,RP0	    ;BANCO 1 DE MEMORIA
+ 
+ ; VARIÁVEIS
+ 
+   CBLOCK   0X20			    ;INICIO MEMÓRIA - REGISTRADORES DE USO GERAL
+   
+   AUX1
+   AUX2
+   
+   ENDC					    ;FIM DA ALOCAÇÃO DE REGISTRADORES DE USO GERAL
+   
+ ; SAÍDAS
+ 
+ #DEFINE	LED1	GPIO,2		    ;SAÍDA LED 1 NA PORTA 4
+ #DEFINE	LED2	GPIO,0		    ;SAIDA LED 2 NA PORTA 2
+ 
+ ; VETOR RESET
+ 
+    ORG	    0X00			    ;
+    GOTO    SETUP			    ;CONFIGURAÇÃO INICIAL DOS REGISTRADORES
+    
+; VETOR DE INTERRUPÇÃO
+    
+    ORG	    0X04
+    RETFIE				    ;RETORNA DE INTERRUPÇÃO
+    
+SETUP:    
+        
+    BANK1				    ;MOVE P/ O BANCO 1 DE MEMORIA
+    
+    MOVLW   0X00
+    MOVWF   ANSEL			    ;DESABILITA I/O ANALÓGICO			    ;
+    
+    MOVLW   B'00000000'			    ;
+    MOVWF   TRISIO			    ;CONFIG PORTAS 2 E 4 COMO SAIDAS
+        
+    BANK0				    ;VOLTA P/ O BANCO 0
+    
+    MOVLW   B'00000111'			    ;
+    MOVWF   CMCON			    ;DESLIGA OS COMPARADORES
+    MOVLW   B'00000001'			    ;
+    MOVWF   GPIO			    ;INICIA COM O PINO 0 EM HIGH
+        
+    
+; ROTINA PRINCIPAL    
+    
+MAIN:
+;    CALL    INV_1
+    MOVLW   B'00000101'			    ;MASCARA P/ INVERSÃO DOS PINOS
+    XORWF   GPIO,F			    ;OU EXCLUSIVO, COMPARA E INVERTE OS PINOS 0 E 2
+   
+    CALL    DELAY
+    
+    GOTO    MAIN
+    
+;INV_1:
+;    BTFSC   LED1			    ;TESTA LED1, PULA SE ESTIVER EM 0
+;    GOTO    INV_2			    ;VAI P/ INV_2
+;    BSF	    LED1			    ;LIGA LED 1
+;    BCF	    LED2			    ;APAGA LED2
+;    RETURN    
+;INV_2:
+;    BCF	    LED1			    ;APAGA LED1
+;    BSF	    LED2			    ;LIGA LED2
+;    RETURN
+    
+DELAY:
+    MOVLW   D'200'			    ;MOVE 200 P/ WORK
+    MOVWF   AUX1			    ;CARREGA 200 EM AUX1
+    
+BACK1:
+    MOVLW   D'250'			    ;MOVE 250 P/ WORK
+    MOVWF   AUX2			    ;CARREGA 250 EM AUX2
+    
+BACK2:
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    DECFSZ  AUX2			    ;DECREMENTA AUX2, PULA QUANDO ZERO
+    GOTO    BACK2			    ;VOLTA P/ BACK2
+    
+    DECFSZ  AUX1
+    GOTO    BACK1
+    
+    RETURN
+    
+    END
+   
+ 
+
+
+
