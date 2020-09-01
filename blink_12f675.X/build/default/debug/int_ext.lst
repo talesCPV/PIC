@@ -1,0 +1,368 @@
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-31-2020  22:37:40         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ; PIC12F675 Configuration Bit Settings
+                      00002 
+                      00003 ; Assembly source line config statements
+                      00004 
+                      00005 #include "p12f675.inc"
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ; Build date : Jan 06 2020
+                      00005 ;  MPASM PIC12F675 processor include
+                      00006 ; 
+                      00007 ;  (c) Copyright 1999-2020 Microchip Technology, All rights reserved
+                      00008 ;==========================================================================
+                      00009 
+                      00367         LIST
+                      00006 
+                      00007 ; CONFIG
+                      00008 ; __config 0x3185
+2007   3F85           00009  __CONFIG _FOSC_INTRCCLK & _WDTE_OFF & _PWRTE_ON & _MCLRE_OFF & _BOREN_OFF & _CP_OFF & _CPD_OFF
+                      00010  
+                      00011 ; PAGINAÇÃO DE MEMORIA
+                      00012  
+                      00013  #DEFINE        BANK0   BCF STATUS,RP0      ;BANCO 0 DE MEMÓRIA
+                      00014  #DEFINE        BANK1   BSF STATUS,RP0      ;BANCO 1 DE MEMORIA
+                      00015  
+                      00016 ; CONSTANTES
+                      00017 ; #DEFINE       TEMPO   D'004'              ;FLAG DO TMR0
+                      00018  
+                      00019  ; VARIÁVEIS
+                      00020  
+                      00021    CBLOCK   0X20                            ;INICIO MEMÓRIA - REGISTRADORES DE USO GERAL 
+                      00022    
+  00000020            00023         CONT_1                              ;CONTADOR P/ O TIMER
+  00000021            00024         CONT_2                              ;
+                      00025    
+                      00026    ENDC                                     ;FIM DA ALOCAÇÃO DE REGISTRADORES DE USO GERAL
+                      00027    
+                      00028  ; SAÍDAS
+                      00029  
+                      00030  #DEFINE        LED     GPIO,5              ;SAIDA LED 2 NA PORTA 1
+                      00031  #DEFINE        BUT     GPIO,2              ;ENTRADA BOTÃO NA GPIO 2
+                      00032  
+                      00033  ; VETOR RESET
+                      00034  
+                      00035     ORG     0X00                            ;
+0000   2???           00036     GOTO    SETUP                           ;CONFIGURAÇÃO INICIAL DOS REGISTRADORES
+                      00037     
+                      00038 ; VETOR DE INTERRUPÇÃO    
+                      00039     ORG     0X04
+                      00040     
+0004   188B           00041     BTFSC   INTCON,INTF                     ;TESTA O FLAG DA INTERRUPÇÃO EXTERNA NO GPIO2
+0005   2???           00042     CALL    INT_EXT                         ;CHAMA A FUNÇÃO PARA TRATAR A INTERRUPÇÃO EXTERNA
+                      00043     
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-31-2020  22:37:40         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0006   0009           00044     RETFIE                                  ;RETORNA DE INTERRUPÇÃO
+                      00045     
+0007                  00046 SETUP:    
+                      00047     
+0007   1683           00048     BANK1                                   ;MOVE P/ O BANCO 1 DE MEMORIA
+                      00049                     ;    
+0008   30DF           00050     MOVLW   B'11011111'                     ;
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0009   0085           00051     MOVWF   TRISIO                          ;CONFIGURA GPIO 5 COMO SAIDA DIG
+                      00052     
+000A   3088           00053     MOVLW   B'10001000'                     ;
+000B   008B           00054     MOVWF   INTCON                          ;HABILITA AS INTERRUPÇÕES GERAIS E INT EXTERNA (GP2)
+                      00055     
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+000C   1701           00056     BSF     OPTION_REG,INTEDG               ;SETA INT. EXTERNA PELA BORDA DE DESCIDA DO GP2
+                      00057         
+000D   1283           00058     BANK0                                   ;VOLTA P/ O BANCO 0
+                      00059 
+000E   1685           00060     BSF     LED                             ;INICIA O LED ACESO
+                      00061     
+000F   30C8           00062     MOVLW   D'200'                          ;
+0010   00A0           00063     MOVWF   CONT_1                          ;RESETA CONT_1 (200 X 10us) 2 MILISEGUNDOS    
+0011   3064           00064     MOVLW   D'100'                          ;
+0012   00A1           00065     MOVWF   CONT_2                          ;RESETA CONT_2 (100 X 2ms) 200 MILISEGUNDOS    
+                      00066 
+                      00067 
+                      00068 ; ROTINA PRINCIPAL    
+                      00069     
+0013                  00070 MAIN:
+0013   0000           00071     NOP                                     ;
+0014   2???           00072     GOTO    MAIN                            ;
+                      00073     
+                      00074 
+                      00075 ;   SUB-ROTINAS (FUNÇÕES)    
+0015                  00076 INT_EXT:
+0015   108B           00077     BCF     INTCON,INTF                     ;LIMPA A FLAG DA INTERRUPÇÃO EXTERNA
+0016   3020           00078     MOVLW   B'00100000'                     ;MASCARA P/ INVERSÃO DOS PINOS
+0017   0685           00079     XORWF   GPIO,F                          ;OU EXCLUSIVO, COMPARA E INVERTE O GP5
+0018   2???           00080     CALL    DELAY                           ;AGUARDA 200ms P/ EVITAR BOUNCE DO BOTÃO    
+0019   0008           00081     RETURN
+                      00082     
+001A                  00083 DELAY:                                      ;DELAY ANTI-BOUNCE - 200 ms    
+001A   0000           00084     NOP
+001B   0000           00085     NOP
+001C   0000           00086     NOP
+001D   0000           00087     NOP
+001E   0000           00088     NOP
+001F   0000           00089     NOP
+0020   0000           00090     NOP
+Message[305]: Using default destination of 1 (file).
+0021   0BA0           00091     DECFSZ  CONT_1                          ;TIMER    
+0022   2???           00092     GOTO    DELAY                           ;
+0023   30C8           00093     MOVLW   D'200'                          ;
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-31-2020  22:37:40         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0024   00A0           00094     MOVWF   CONT_1                          ;RESETA CONT_1 (200 X 10us) 2 MILISEGUNDOS    
+Message[305]: Using default destination of 1 (file).
+0025   0BA1           00095     DECFSZ  CONT_2                          ;
+0026   2???           00096     GOTO    DELAY
+0027   3064           00097     MOVLW   D'100'                          ;
+0028   00A1           00098     MOVWF   CONT_2                          ;RESETA CONT_1 (100 X 2ms) 200 MILISEGUNDOS    
+0029   0008           00099     RETURN                                  ;VOLTA DA FUNÇÃO DELAY
+                      00100 
+                      00101     
+3F85                  00102     END
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-31-2020  22:37:40         PAGE  4
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ADCON0                            0000001F
+ADCS0                             00000004
+ADCS1                             00000005
+ADCS2                             00000006
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+ANS0                              00000000
+ANS1                              00000001
+ANS2                              00000002
+ANS3                              00000003
+ANSEL                             0000009F
+BANK0                             BCF STATUS,RP0
+BANK1                             BSF STATUS,RP0
+BUT                               GPIO,2
+C                                 00000000
+CAL0                              00000002
+CAL1                              00000003
+CAL2                              00000004
+CAL3                              00000005
+CAL4                              00000006
+CAL5                              00000007
+CHS0                              00000002
+CHS1                              00000003
+CINV                              00000004
+CIS                               00000003
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             00000019
+CMIE                              00000003
+CMIF                              00000003
+CONT_1                            00000020
+CONT_2                            00000021
+COUT                              00000006
+DC                                00000001
+DELAY                             0000001A
+EEADR                             0000009B
+EECON1                            0000009C
+EECON2                            0000009D
+EEDAT                             0000009A
+EEDATA                            0000009A
+EEIE                              00000007
+EEIF                              00000007
+F                                 00000001
+FSR                               00000004
+GIE                               00000007
+GO                                00000001
+GO_DONE                           00000001
+GO_NOT_DONE                       00000001
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-31-2020  22:37:40         PAGE  5
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+GP0                               00000000
+GP1                               00000001
+GP2                               00000002
+GP3                               00000003
+GP4                               00000004
+GP5                               00000005
+GPIE                              00000003
+GPIF                              00000000
+GPIO                              00000005
+GPIO0                             00000000
+GPIO1                             00000001
+GPIO2                             00000002
+GPIO3                             00000003
+GPIO4                             00000004
+GPIO5                             00000005
+INDF                              00000000
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+INT_EXT                           00000015
+IOC                               00000096
+IOC0                              00000000
+IOC1                              00000001
+IOC2                              00000002
+IOC3                              00000003
+IOC4                              00000004
+IOC5                              00000005
+IOCB                              00000096
+IOCB0                             00000000
+IOCB1                             00000001
+IOCB2                             00000002
+IOCB3                             00000003
+IOCB4                             00000004
+IOCB5                             00000005
+IRP                               00000007
+LED                               GPIO,5
+MAIN                              00000013
+NOT_BOD                           00000000
+NOT_BOR                           00000000
+NOT_DONE                          00000001
+NOT_GPPU                          00000007
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+OPTION_REG                        00000081
+OSCCAL                            00000090
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PIE1                              0000008C
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-31-2020  22:37:40         PAGE  6
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+PIR1                              0000000C
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+RD                                00000000
+RP0                               00000005
+RP1                               00000006
+SETUP                             00000007
+STATUS                            00000003
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1IE                              00000000
+T1IF                              00000000
+T1OSCEN                           00000003
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1GE                            00000006
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TRISIO                            00000085
+TRISIO0                           00000000
+TRISIO1                           00000001
+TRISIO2                           00000002
+TRISIO3                           00000003
+TRISIO4                           00000004
+TRISIO5                           00000005
+VCFG                              00000006
+VR0                               00000000
+VR1                               00000001
+VR2                               00000002
+VR3                               00000003
+VRCON                             00000099
+VREN                              00000007
+VRR                               00000005
+W                                 00000000
+WPU                               00000095
+WPU0                              00000000
+WPU1                              00000001
+WPU2                              00000002
+WPU4                              00000004
+WPU5                              00000005
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-31-2020  22:37:40         PAGE  7
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_OFF                           00003FFF
+_CP_ON                            00003F7F
+_DEVID1                           00002006
+_EC_OSC                           00003FFB
+_EXTRC_OSC_CLKOUT                 00003FFF
+_EXTRC_OSC_NOCLKOUT               00003FFE
+_FOSC_EC                          00003FFB
+_FOSC_EXTRCCLK                    00003FFF
+_FOSC_EXTRCIO                     00003FFE
+_FOSC_HS                          00003FFA
+_FOSC_INTRCCLK                    00003FFD
+_FOSC_INTRCIO                     00003FFC
+_FOSC_LP                          00003FF8
+_FOSC_XT                          00003FF9
+_HS_OSC                           00003FFA
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+_LP_OSC                           00003FF8
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FEF
+_WDTE_OFF                         00003FF7
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FF7
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FF9
+__12F675                          00000001
+__DEBUG                           
+__MPLAB_DEBUGGER_SIMULATOR        1
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :     4 reported,     0 suppressed
+
+

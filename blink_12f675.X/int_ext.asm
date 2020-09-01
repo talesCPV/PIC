@@ -1,0 +1,107 @@
+; PIC12F675 Configuration Bit Settings
+
+; Assembly source line config statements
+
+#include "p12f675.inc"
+
+; CONFIG
+; __config 0x3185
+ __CONFIG _FOSC_INTRCCLK & _WDTE_OFF & _PWRTE_ON & _MCLRE_OFF & _BOREN_OFF & _CP_OFF & _CPD_OFF
+ 
+; PAGINAÇÃO DE MEMORIA
+ 
+ #DEFINE	BANK0	BCF STATUS,RP0	    ;BANCO 0 DE MEMÓRIA
+ #DEFINE	BANK1	BSF STATUS,RP0	    ;BANCO 1 DE MEMORIA
+ 
+; CONSTANTES
+; #DEFINE	TEMPO	D'004'		    ;FLAG DO TMR0
+ 
+ ; VARIÁVEIS
+ 
+   CBLOCK   0X20			    ;INICIO MEMÓRIA - REGISTRADORES DE USO GERAL 
+   
+	CONT_1				    ;CONTADOR P/ O TIMER
+	CONT_2				    ;
+   
+   ENDC					    ;FIM DA ALOCAÇÃO DE REGISTRADORES DE USO GERAL
+   
+ ; SAÍDAS
+ 
+ #DEFINE	LED	GPIO,5		    ;SAIDA LED 2 NA PORTA 1
+ #DEFINE	BUT	GPIO,2		    ;ENTRADA BOTÃO NA GPIO 2
+ 
+ ; VETOR RESET
+ 
+    ORG	    0X00			    ;
+    GOTO    SETUP			    ;CONFIGURAÇÃO INICIAL DOS REGISTRADORES
+    
+; VETOR DE INTERRUPÇÃO    
+    ORG	    0X04
+    
+    BTFSC   INTCON,INTF			    ;TESTA O FLAG DA INTERRUPÇÃO EXTERNA NO GPIO2
+    CALL    INT_EXT			    ;CHAMA A FUNÇÃO PARA TRATAR A INTERRUPÇÃO EXTERNA
+    
+    RETFIE				    ;RETORNA DE INTERRUPÇÃO
+    
+SETUP:    
+    
+    BANK1				    ;MOVE P/ O BANCO 1 DE MEMORIA
+    		    ;    
+    MOVLW   B'11011111'			    ;
+    MOVWF   TRISIO			    ;CONFIGURA GPIO 5 COMO SAIDA DIG
+    
+    MOVLW   B'10001000'			    ;
+    MOVWF   INTCON			    ;HABILITA AS INTERRUPÇÕES GERAIS E INT EXTERNA (GP2)
+    
+    BSF	    OPTION_REG,INTEDG		    ;SETA INT. EXTERNA PELA BORDA DE DESCIDA DO GP2
+        
+    BANK0				    ;VOLTA P/ O BANCO 0
+
+    BSF	    LED				    ;INICIA O LED ACESO
+    
+    MOVLW   D'200'			    ;
+    MOVWF   CONT_1			    ;RESETA CONT_1 (200 X 10us) 2 MILISEGUNDOS    
+    MOVLW   D'100'			    ;
+    MOVWF   CONT_2			    ;RESETA CONT_2 (100 X 2ms) 200 MILISEGUNDOS    
+
+
+; ROTINA PRINCIPAL    
+    
+MAIN:
+    NOP					    ;
+    GOTO    MAIN			    ;
+    
+
+;   SUB-ROTINAS (FUNÇÕES)    
+INT_EXT:
+    BCF	    INTCON,INTF			    ;LIMPA A FLAG DA INTERRUPÇÃO EXTERNA
+    MOVLW   B'00100000'			    ;MASCARA P/ INVERSÃO DOS PINOS
+    XORWF   GPIO,F			    ;OU EXCLUSIVO, COMPARA E INVERTE O GP5
+    CALL    DELAY			    ;AGUARDA 200ms P/ EVITAR BOUNCE DO BOTÃO    
+    RETURN
+    
+DELAY:					    ;DELAY ANTI-BOUNCE - 200 ms    
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    DECFSZ  CONT_1			    ;TIMER    
+    GOTO    DELAY			    ;
+    MOVLW   D'200'			    ;
+    MOVWF   CONT_1			    ;RESETA CONT_1 (200 X 10us) 2 MILISEGUNDOS    
+    DECFSZ  CONT_2			    ;
+    GOTO    DELAY
+    MOVLW   D'100'			    ;
+    MOVWF   CONT_2			    ;RESETA CONT_1 (100 X 2ms) 200 MILISEGUNDOS    
+    RETURN				    ;VOLTA DA FUNÇÃO DELAY
+
+    
+    END
+
+
+
+
+

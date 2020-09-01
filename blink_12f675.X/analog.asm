@@ -1,0 +1,135 @@
+; PIC12F675 Configuration Bit Settings
+
+; Assembly source line config statements
+
+#include "p12f675.inc"
+
+; CONFIG
+; __config 0x3185
+ __CONFIG _FOSC_INTRCCLK & _WDTE_OFF & _PWRTE_ON & _MCLRE_OFF & _BOREN_OFF & _CP_OFF & _CPD_OFF
+ 
+; PAGINAÇÃO DE MEMORIA
+ 
+ #DEFINE	BANK0	BCF STATUS,RP0	    ;BANCO 0 DE MEMÓRIA
+ #DEFINE	BANK1	BSF STATUS,RP0	    ;BANCO 1 DE MEMORIA
+ 
+; CONSTANTES
+ #DEFINE	TEMPO	D'004'		    ;FLAG DO TMR0
+ 
+ ; VARIÁVEIS
+ 
+   CBLOCK   0X20			    ;INICIO MEMÓRIA - REGISTRADORES DE USO GERAL 
+   
+	CONT				    ;CONTADOR P/ O TIMER	
+	ANA_VAL				    ;
+	WAIT_1				    ;CONTADOR P/ DELAY POR POOLING
+	WAIT_2				    ;
+   
+   ENDC					    ;FIM DA ALOCAÇÃO DE REGISTRADORES DE USO GERAL
+   
+ ; SAÍDAS
+ 
+ #DEFINE	LED1	GPIO,2		    ;SAÍDA LED 1 NA PORTA 2
+ #DEFINE	LED2	GPIO,5		    ;SAIDA LED 2 NA PORTA 1
+ #DEFINE	POT1	GPIO,0		    ;POTENCIOMETRO
+ 
+ ; VETOR RESET
+ 
+    ORG	    0X00			    ;
+    GOTO    SETUP			    ;CONFIGURAÇÃO INICIAL DOS REGISTRADORES
+    
+; VETOR DE INTERRUPÇÃO    
+    ORG	    0X04
+    
+    BTFSC   PIR1,0			    ;TESTA T1IF, PULA SE = A ZERO   
+    CALL    DELAY			    ;CHAMA A FUNÇÃO INVERTE
+    
+    RETFIE				    ;RETORNA DE INTERRUPÇÃO
+    
+SETUP:    
+    MOVLW   B'00111001'			    ;
+    MOVWF   T1CON			    ;CONFIG REGISTRADOR DO TMR1
+    
+    BANK1				    ;MOVE P/ O BANCO 1 DE MEMORIA
+    
+    MOVLW   B'00010001'
+    MOVWF   ANSEL			    ;HABILITA O ANALÓGICO NO GPIO 0			    ;
+    
+    MOVLW   B'11011011'			    ;
+    MOVWF   TRISIO			    ;CONFIGURA GPIO 1 E 2 COMO SAIDA DIG
+        
+    MOVLW   B'11000000'			    ;
+    MOVWF   INTCON			    ;HABILITA AS INTERRUPÇÕES GERAIS
+    
+    MOVLW   B'00000001'			    ;
+    MOVWF   PIE1			    ;CONFIG ESTOURO DO TMR1
+    
+    BANK0				    ;VOLTA P/ O BANCO 0
+    MOVLW   B'00000111'			    ;
+    MOVWF   CMCON			    ;DESLIGA OS COMPARADORES
+    MOVLW   B'00000011'			    ;
+    MOVWF   ADCON0			    ;CONFIG A/D
+    
+    BSF	    LED1			    ;SETA ESTADO INICIAL DOS LEDS
+    BCF	    LED2			    ;
+    CALL    ZERA_TEMPO			    ;CHAMA SUB-ROTINA
+    MOVLW   0xF0
+    MOVWF   ANA_VAL			    ;ZERA ANA_VAL
+    MOVLW   D'200'			    ;
+    MOVWF   WAIT_1			    ;INICIALIZA WAIT
+
+; ROTINA PRINCIPAL    
+    
+MAIN:
+    BSF	    ADCON0,GO_DONE	    
+    BTFSC   ADCON0,GO_DONE		    ;DADO ESTA PRONTO?
+    GOTO    $-1
+    MOVFW   ADRESH
+    MOVWF   ANA_VAL
+    CALL    TMR_WAIT			    ;
+    GOTO    MAIN			    ;
+    
+
+;   SUB-ROTINAS (FUNÇÕES)    
+    
+DELAY:
+    BCF	    PIR1,0			    ;LIMPA O BIT TMR1_IF
+    MOVFW   ANA_VAL			    ;MOVE O BYTE ALTO DO VALOR DE A/D 0 P/ W
+;    MOVLW   0XF0			    ;******** TESTE ********
+    MOVWF   TMR1H			    ;MOVE W P/ O BYTE ALTO DO CONTADOR DO TMR1  
+;    BSF	    ADCON0,1			    ;STARTA NOVO CICLO
+    DECFSZ  CONT			    ;DESCREMENTA CONT, PULA QUANDO ZERO
+    RETURN
+    CALL    ZERA_TEMPO;
+    MOVLW   B'00100100'			    ;MASCARA P/ INVERSÃO DOS PINOS
+    XORWF   GPIO,F			    ;OU EXCLUSIVO, COMPARA E INVERTE OS PINOS 1 E 2    
+    RETURN
+    
+ZERA_TEMPO:
+    MOVLW   TEMPO			    ;MOVE TEMPO P/ W
+    MOVWF   CONT			    ;MOVE TEMPO P/ CONT
+    RETURN
+
+TMR_WAIT:
+    MOVLW   D'50'			    ;
+    MOVWF   WAIT_2			    ;INICIALIZA WAIT_2
+BACK_1:    
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    DECFSZ  WAIT_1			    ;DECREMENTA WAIT_1
+    GOTO    BACK_1			    ;
+    MOVLW   D'200'			    ;
+    MOVWF   WAIT_1			    ;INICIALIZA WAIT
+    DECFSZ  WAIT_2			    ;
+    GOTO    BACK_1
+    RETURN
+    
+    
+    END
+
+

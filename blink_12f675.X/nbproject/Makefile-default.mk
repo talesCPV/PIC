@@ -57,17 +57,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=tmr_0.asm
+SOURCEFILES_QUOTED_IF_SPACED=int_ext.asm
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/tmr_0.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/tmr_0.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/int_ext.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/int_ext.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/tmr_0.o
+OBJECTFILES=${OBJECTDIR}/int_ext.o
 
 # Source Files
-SOURCEFILES=tmr_0.asm
+SOURCEFILES=int_ext.asm
 
 
 
@@ -95,22 +95,22 @@ MP_LINKER_DEBUG_OPTION=
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: assemble
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-${OBJECTDIR}/tmr_0.o: tmr_0.asm  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/int_ext.o: int_ext.asm  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/tmr_0.o.d 
-	@${RM} ${OBJECTDIR}/tmr_0.o 
-	@${FIXDEPS} dummy.d -e "${OBJECTDIR}/tmr_0.err" $(SILENT) -c ${MP_AS} $(MP_EXTRA_AS_PRE) -d__DEBUG -d__MPLAB_DEBUGGER_SIMULATOR=1 -q -p$(MP_PROCESSOR_OPTION) -u  -l\\\"${OBJECTDIR}/tmr_0.lst\\\" -e\\\"${OBJECTDIR}/tmr_0.err\\\" $(ASM_OPTIONS)    -o\\\"${OBJECTDIR}/tmr_0.o\\\" \\\"tmr_0.asm\\\" 
-	@${DEP_GEN} -d "${OBJECTDIR}/tmr_0.o"
-	@${FIXDEPS} "${OBJECTDIR}/tmr_0.o.d" $(SILENT) -rsi ${MP_AS_DIR} -c18 
+	@${RM} ${OBJECTDIR}/int_ext.o.d 
+	@${RM} ${OBJECTDIR}/int_ext.o 
+	@${FIXDEPS} dummy.d -e "${OBJECTDIR}/int_ext.err" $(SILENT) -c ${MP_AS} $(MP_EXTRA_AS_PRE) -d__DEBUG -d__MPLAB_DEBUGGER_SIMULATOR=1 -q -p$(MP_PROCESSOR_OPTION) -u  -l\\\"${OBJECTDIR}/int_ext.lst\\\" -e\\\"${OBJECTDIR}/int_ext.err\\\" $(ASM_OPTIONS)    -o\\\"${OBJECTDIR}/int_ext.o\\\" \\\"int_ext.asm\\\" 
+	@${DEP_GEN} -d "${OBJECTDIR}/int_ext.o"
+	@${FIXDEPS} "${OBJECTDIR}/int_ext.o.d" $(SILENT) -rsi ${MP_AS_DIR} -c18 
 	
 else
-${OBJECTDIR}/tmr_0.o: tmr_0.asm  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/int_ext.o: int_ext.asm  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/tmr_0.o.d 
-	@${RM} ${OBJECTDIR}/tmr_0.o 
-	@${FIXDEPS} dummy.d -e "${OBJECTDIR}/tmr_0.err" $(SILENT) -c ${MP_AS} $(MP_EXTRA_AS_PRE) -q -p$(MP_PROCESSOR_OPTION) -u  -l\\\"${OBJECTDIR}/tmr_0.lst\\\" -e\\\"${OBJECTDIR}/tmr_0.err\\\" $(ASM_OPTIONS)    -o\\\"${OBJECTDIR}/tmr_0.o\\\" \\\"tmr_0.asm\\\" 
-	@${DEP_GEN} -d "${OBJECTDIR}/tmr_0.o"
-	@${FIXDEPS} "${OBJECTDIR}/tmr_0.o.d" $(SILENT) -rsi ${MP_AS_DIR} -c18 
+	@${RM} ${OBJECTDIR}/int_ext.o.d 
+	@${RM} ${OBJECTDIR}/int_ext.o 
+	@${FIXDEPS} dummy.d -e "${OBJECTDIR}/int_ext.err" $(SILENT) -c ${MP_AS} $(MP_EXTRA_AS_PRE) -q -p$(MP_PROCESSOR_OPTION) -u  -l\\\"${OBJECTDIR}/int_ext.lst\\\" -e\\\"${OBJECTDIR}/int_ext.err\\\" $(ASM_OPTIONS)    -o\\\"${OBJECTDIR}/int_ext.o\\\" \\\"int_ext.asm\\\" 
+	@${DEP_GEN} -d "${OBJECTDIR}/int_ext.o"
+	@${FIXDEPS} "${OBJECTDIR}/int_ext.o.d" $(SILENT) -rsi ${MP_AS_DIR} -c18 
 	
 endif
 
