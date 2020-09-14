@@ -1,0 +1,443 @@
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/HELLO   9-3-2020  21:38:36         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ;
+                      00002 ; Curso de Assembly para PIC WR Kits Aula 37
+                      00003 ;
+                      00004 ;
+                      00005 ; Interrupção Externa
+                      00006 ;
+                      00007 ;
+                      00008 ;
+                      00009 ; Sistema Embarcado Sugerido: PARADOXUS PEPTO
+                      00010 ;
+                      00011 ; Disponível em https://wrkits.com.br/catalog/show/141 
+                      00012 ;
+                      00013 ; Clock: 4MHz    Ciclo de máquina = 1µs
+                      00014 ;
+                      00015 ; Autor: Eng. Wagner Rambo   Data: Julho de 2016
+                      00016 ;
+                      00017 ;
+                      00018 
+                      00019 ; --- Listagem do Processador Utilizado ---
+                      00020 ;       list    p=16F628A                                               ;Utilizado PIC16F628A
+                      00021         
+                      00022         
+                      00023 ; --- Arquivos Inclusos no Projeto ---
+                      00024 #include "p16f628a.inc"
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ; Build date : Jan 06 2020
+                      00005 ;  MPASM PIC16F628A processor include
+                      00006 ; 
+                      00007 ;  (c) Copyright 1999-2020 Microchip Technology, All rights reserved
+                      00008 ;==========================================================================
+                      00009 
+                      00386         LIST
+                      00025         
+                      00026         
+                      00027 ; --- FUSE Bits ---
+                      00028 ; - Cristal de 4MHz
+                      00029 ; - Desabilitamos o Watch Dog Timer
+                      00030 ; - Habilitamos o Power Up Timer
+                      00031 ; - Brown Out desabilitado
+                      00032 ; - Sem programação em baixa tensão, sem proteção de código, sem proteção da memória EEPROM
+                      00033 ; - Master Clear Habilitado
+2007   3F11           00034  __CONFIG _FOSC_INTOSCCLK & _WDTE_OFF & _PWRTE_ON & _MCLRE_OFF & _BOREN_OFF & _LVP_OFF & _CPD_OFF & _CP_
+                            OFF
+                      00035         
+                      00036         
+                      00037 ; --- Paginação de Memória ---
+                      00038         #define         bank0   bcf     STATUS,RP0              ;Cria um mnemônico para selecionar o ban
+                            co 0 de memória
+                      00039         #define         bank1   bsf     STATUS,RP0              ;Cria um mnemônico para selecionar o ban
+                            co 1 de memória
+                      00040         
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/HELLO   9-3-2020  21:38:36         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00041         
+                      00042 ; --- Mapeamento de Hardware (PARADOXUS PEPTO) ---
+                      00043         #define         LED1    PORTA,3                         ;LED1 ligado ao pino RA3
+                      00044         #define         LED2    PORTA,2                         ;LED2 ligado ao pino RA2
+                      00045 
+                      00046 ; --- Registradores de Uso Geral ---
+                      00047         cblock          H'20'                                           ;Início da memória disponível pa
+                            ra o usuário
+                      00048         
+  00000020            00049         W_TEMP                                                                  ;Registrador para armaze
+                            nar o conteúdo temporário de work
+  00000021            00050         STATUS_TEMP                                                             ;Registrador para armaze
+                            nar o conteúdo temporário de STATUS
+  00000022            00051         counter1                                                                ;Registrador auxiliar pa
+                            ra contagem
+  00000023            00052         counter2                                                                ;Registrador auxiliar pa
+                            ra contagem     
+  00000024            00053         tempo0                                                                  ;Registrador auxiliar pa
+                            ra temporização
+  00000025            00054         tempo1                                                                  ;Registrador auxiliar pa
+                            ra temporização 
+                      00055  
+                      00056         endc                                                                    ;Final da memória do usu
+                            ário
+                      00057         
+                      00058 
+                      00059 ; --- Vetor de RESET ---
+                      00060         org                     H'0000'                                         ;Origem no endereço 00h 
+                            de memória
+0000   2???           00061         goto            inicio                                          ;Desvia para a label início
+                      00062         
+                      00063 
+                      00064 ; --- Vetor de Interrupção ---
+                      00065         org                     H'0004'                                         ;As interrupções deste p
+                            rocessador apontam para este endereço
+                      00066         
+                      00067 ; -- Salva Contexto --
+0004   00A0           00068         movwf           W_TEMP                                          ;Copia o conteúdo de Work para W
+                            _TEMP
+0005   0E03           00069         swapf           STATUS,W                                        ;Move o conteúdo de STATUS com o
+                            s nibbles invertidos para Work
+0006   1283           00070         bank0                                                                   ;Seleciona o banco 0 de 
+                            memória (padrão do RESET) 
+0007   00A1           00071         movwf           STATUS_TEMP                                     ;Copia o conteúdo de STATUS com 
+                            os nibbles invertidos para STATUS_TEMP
+                      00072 ; -- Final do Salvamento de Contexto --
+                      00073 
+                      00074 
+                      00075         ; Trata ISR...
+0008   1C8B           00076         btfss           INTCON,INTF                                     ;Houve interrupção externa?
+0009   2???           00077         goto            exit_ISR                                        ;Não, desvia para saída da inter
+                            rupção
+000A   108B           00078         bcf                     INTCON,INTF                                     ;Sim, limpa flag
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/HELLO   9-3-2020  21:38:36         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00079         
+Message[305]: Using default destination of 1 (file).
+000B   0986           00080         comf            PORTB                                           ;Complementa o PORTB
+                      00081         
+                      00082 
+                      00083 
+                      00084 
+                      00085 
+                      00086 ; -- Recupera Contexto (Saída da Interrupção) --
+000C                  00087 exit_ISR:
+                      00088 
+000C   0E21           00089         swapf           STATUS_TEMP,W                           ;Copia em Work o conteúdo de STATUS_TEMP
+                             com os nibbles invertidos
+000D   0083           00090         movwf           STATUS                                          ;Recupera o conteúdo de STATUS
+000E   0EA0           00091         swapf           W_TEMP,F                                        ;W_TEMP = W_TEMP com os nibbles 
+                            invertidos 
+000F   0E20           00092         swapf           W_TEMP,W                                        ;Recupera o conteúdo de Work
+                      00093         
+0010   0009           00094         retfie                                                                  ;Retorna da interrupção
+                      00095         
+                      00096         
+0011                  00097 inicio:
+                      00098 
+0011   1683           00099         bank1                                                                   ;Seleciona o banco 1 de 
+                            memória
+0012   30FD           00100         movlw           H'FD'                                           ;w = FDh
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0013   0086           00101         movwf           TRISB                                           ;Configura RB1 como saída e dema
+                            is pinos como entrada
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0014   1701           00102         bsf                     OPTION_REG,6                            ;Configura interrupção externa p
+                            or borda de subida
+0015   1283           00103         bank0                                                                   ;Seleciona o banco 0 de 
+                            memória
+0016   3090           00104         movlw           H'90'                                           ;w = 90h
+0017   008B           00105         movwf           INTCON                                          ;Habilita interrupção global e i
+                            nterrupção externa
+0018   1086           00106         bcf                     PORTB,1                                         ;Inicia RB1 em 0
+                      00107         
+                      00108  
+                      00109  
+                      00110 
+                      00111 ; --- Loop Infinito --- 
+0019   2???           00112         goto            $                                                       ;Aguarda interrupção
+                      00113         
+                      00114         
+                      00115         
+                      00116 
+                      00117 ; --- Final do Programa ---     
+3F11                  00118         end                                                                             ;Final do Progra
+                            ma
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/HELLO   9-3-2020  21:38:36         PAGE  4
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ADDEN                             00000003
+ADEN                              00000003
+BRGH                              00000002
+C                                 00000000
+C1INV                             00000004
+C1OUT                             00000006
+C2INV                             00000005
+C2OUT                             00000007
+CCP1CON                           00000017
+CCP1IE                            00000002
+CCP1IF                            00000002
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCP1X                             00000005
+CCP1Y                             00000004
+CCPR1                             00000015
+CCPR1H                            00000016
+CCPR1L                            00000015
+CIS                               00000003
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             0000001F
+CMIE                              00000006
+CMIF                              00000006
+CREN                              00000004
+CSRC                              00000007
+DATA_CP_OFF                       00003FFF
+DATA_CP_ON                        00003EFF
+DC                                00000001
+EEADR                             0000009B
+EECON1                            0000009C
+EECON2                            0000009D
+EEDATA                            0000009A
+EEIE                              00000007
+EEIF                              00000007
+F                                 00000001
+FERR                              00000002
+FSR                               00000004
+GIE                               00000007
+INDF                              00000000
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IRP                               00000007
+LED1                              PORTA,3
+LED2                              PORTA,2
+NOT_BO                            00000000
+NOT_BOD                           00000000
+NOT_BOR                           00000000
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/HELLO   9-3-2020  21:38:36         PAGE  5
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_RBPU                          00000007
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+OERR                              00000001
+OPTION_REG                        00000081
+OSCF                              00000003
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PIE1                              0000008C
+PIR1                              0000000C
+PORTA                             00000005
+PORTB                             00000006
+PR2                               00000092
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+RA0                               00000000
+RA1                               00000001
+RA2                               00000002
+RA3                               00000003
+RA4                               00000004
+RA5                               00000005
+RA6                               00000006
+RA7                               00000007
+RB0                               00000000
+RB1                               00000001
+RB2                               00000002
+RB3                               00000003
+RB4                               00000004
+RB5                               00000005
+RB6                               00000006
+RB7                               00000007
+RBIE                              00000003
+RBIF                              00000000
+RCIE                              00000005
+RCIF                              00000005
+RCREG                             0000001A
+RCSTA                             00000018
+RD                                00000000
+RP0                               00000005
+RP1                               00000006
+RX9                               00000006
+RX9D                              00000000
+SPBRG                             00000099
+SPEN                              00000007
+SREN                              00000005
+STATUS                            00000003
+STATUS_TEMP                       00000021
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/HELLO   9-3-2020  21:38:36         PAGE  6
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+SYNC                              00000004
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1OSCEN                           00000003
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TMR2                              00000011
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISA                             00000085
+TRISA0                            00000000
+TRISA1                            00000001
+TRISA2                            00000002
+TRISA3                            00000003
+TRISA4                            00000004
+TRISA5                            00000005
+TRISA6                            00000006
+TRISA7                            00000007
+TRISB                             00000086
+TRISB0                            00000000
+TRISB1                            00000001
+TRISB2                            00000002
+TRISB3                            00000003
+TRISB4                            00000004
+TRISB5                            00000005
+TRISB6                            00000006
+TRISB7                            00000007
+TRMT                              00000001
+TX9                               00000006
+TX9D                              00000000
+TXEN                              00000005
+TXIE                              00000004
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/HELLO   9-3-2020  21:38:36         PAGE  7
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TXIF                              00000004
+TXREG                             00000019
+TXSTA                             00000098
+VR0                               00000000
+VR1                               00000001
+VR2                               00000002
+VR3                               00000003
+VRCON                             0000009F
+VREN                              00000007
+VROE                              00000006
+VRR                               00000005
+W                                 00000000
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+W_TEMP                            00000020
+Z                                 00000002
+_.org_1_0019                      00000019
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_OFF                           00003FFF
+_CP_ON                            00001FFF
+_DEVID1                           00002006
+_ER_OSC_CLKOUT                    00003FFF
+_ER_OSC_NOCLKOUT                  00003FFE
+_EXTCLK_OSC                       00003FEF
+_FOSC_ECIO                        00003FEF
+_FOSC_EXTRCCLK                    00003FFF
+_FOSC_EXTRCIO                     00003FFE
+_FOSC_HS                          00003FEE
+_FOSC_INTOSCCLK                   00003FFD
+_FOSC_INTOSCIO                    00003FFC
+_FOSC_LP                          00003FEC
+_FOSC_XT                          00003FED
+_HS_OSC                           00003FEE
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_INTOSC_OSC_CLKOUT                00003FFD
+_INTOSC_OSC_NOCLKOUT              00003FFC
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+_LP_OSC                           00003FEC
+_LVP_OFF                          00003F7F
+_LVP_ON                           00003FFF
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/HELLO   9-3-2020  21:38:36         PAGE  8
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FF7
+_RC_OSC_CLKOUT                    00003FFF
+_RC_OSC_NOCLKOUT                  00003FFE
+_WDTE_OFF                         00003FFB
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FFB
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FED
+__16F628A                         00000001
+__DEBUG                           
+__MPLAB_DEBUGGER_SIMULATOR        1
+bank0                             bcf     STATUS,RP0
+bank1                             bsf     STATUS,RP0
+counter1                          00000022
+counter2                          00000023
+exit_ISR                          0000000C
+inicio                            00000011
+tempo0                            00000024
+tempo1                            00000025
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :     3 reported,     0 suppressed
+
+

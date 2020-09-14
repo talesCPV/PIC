@@ -1,4 +1,4 @@
-MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-30-2020  20:51:58         PAGE  1
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   9-3-2020  22:13:06         PAGE  1
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -57,7 +57,7 @@ LOC  OBJECT CODE     LINE SOURCE TEXT
                       00041 ; VETOR DE INTERRUPÇÃO    
                       00042     ORG     0X04
                       00043     
-MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-30-2020  20:51:58         PAGE  2
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   9-3-2020  22:13:06         PAGE  2
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -116,7 +116,7 @@ Message[302]: Register in operand not in bank 0.  Ensure that bank bits are corr
                       00091     
                       00092 
                       00093 ;   SUB-ROTINAS (FUNÇÕES)    
-MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-30-2020  20:51:58         PAGE  3
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   9-3-2020  22:13:06         PAGE  3
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -165,7 +165,7 @@ Message[305]: Using default destination of 1 (file).
                       00131     
                       00132     
 3F85                  00133     END
-MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-30-2020  20:51:58         PAGE  4
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   9-3-2020  22:13:06         PAGE  4
 
 
 SYMBOL TABLE
@@ -224,7 +224,7 @@ GIE                               00000007
 GO                                00000001
 GO_DONE                           00000001
 GO_NOT_DONE                       00000001
-MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-30-2020  20:51:58         PAGE  5
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   9-3-2020  22:13:06         PAGE  5
 
 
 SYMBOL TABLE
@@ -283,7 +283,7 @@ PCLATH                            0000000A
 PCON                              0000008E
 PEIE                              00000006
 PIE1                              0000008C
-MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-30-2020  20:51:58         PAGE  6
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   9-3-2020  22:13:06         PAGE  6
 
 
 SYMBOL TABLE
@@ -342,7 +342,7 @@ W                                 00000000
 WAIT_1                            00000022
 WAIT_2                            00000023
 WPU                               00000095
-MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-30-2020  20:51:58         PAGE  7
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   9-3-2020  22:13:06         PAGE  7
 
 
 SYMBOL TABLE
@@ -399,7 +399,7 @@ _WDT_ON                           00003FFF
 _XT_OSC                           00003FF9
 __12F675                          00000001
 
-MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   8-30-2020  20:51:58         PAGE  8
+MPASM 5.87  /HOME/TALES/MPLABXPROJECTS/BLINK   9-3-2020  22:13:06         PAGE  8
 
 
 

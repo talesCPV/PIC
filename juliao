@@ -1,0 +1,384 @@
+using BLA0010.Manter;
+using br.gov.fazenda.nfe.www11;
+using OVRES.Framework;
+using System;
+using System.Configuration;
+using System.IO;
+using System.IO.Compression;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+using System.Xml;
+using System.Linq;
+using System.Collections.Generic;
+using OVRES.Framework.GeradorQuery.Contratos;
+using System.Threading;
+using BLA0010.Modelos;
+using System.Text;
+using System.Security.Cryptography.Xml;
+using BLA0010.CapturaXml.br.gov.fazenda.nfe.www;
+
+namespace BLA0010.CapturaXml
+{
+    public class Program
+    {
+
+        static void Main(string[] args)
+        {
+            BuscarNotas();
+        }
+
+        private static string Ciencia(string chaveNota, string CNPJ)
+        {
+            using (var evento = new RecepcaoEvento())
+            {
+
+                try
+                {
+                    var caminhoCertificado = ConfigurationManager.AppSettings["CaminhoCertificado"];
+                    var senhaCertificado = ConfigurationManager.AppSettings["SenhaCertificado"];
+                    var certificado = new X509Certificate2(caminhoCertificado, senhaCertificado, X509KeyStorageFlags.MachineKeySet);
+                    try
+                    {
+
+                        evento.ClientCertificates.Add(certificado);
+                    }
+#pragma warning disable CS0168 // A variável "ex" está declarada, mas nunca é usada
+                    catch (Exception ex)
+#pragma warning restore CS0168 // A variável "ex" está declarada, mas nunca é usada
+                    {
+                    }
+
+                    evento.nfeCabecMsgValue = new nfeCabecMsg
+                    {
+                        cUF = chaveNota.Substring(0, 2),
+                        versaoDados = "1.00"
+                    };
+
+                    //URL do web service nacional
+                    evento.Url = "https://www.nfe.fazenda.gov.br/RecepcaoEvento/RecepcaoEvento.asmx";
+
+                    evento.SoapVersion = System.Web.Services.Protocols.SoapProtocolVersion.Soap12;
+                    var reader = new XmlDocument();
+                    var id = string.Concat("ID210210", chaveNota, "01");
+
+                    var date = DateTime.Now;
+                    var dhEvento = string.Format("{0}T{1}-{2}", date.ToString("yyyy-MM-dd"), date.ToString("HH:mm:ss"), TimeZoneInfo.Local.GetUtcOffset(DateTime.Now).ToString(@"hh\:mm"));
+
+                    var xml = string.Format(@"<?xml version='1.0' encoding='UTF-8'?>
+<envEvento xmlns='http://www.portalfiscal.inf.br/nfe' versao='1.00'>
+  <idLote>1</idLote>
+  <evento  versao='1.00'>
+    <infEvento Id='{0}'>
+      <cOrgao>{1}</cOrgao>
+      <tpAmb>{2}</tpAmb>
+      <CNPJ>{3}</CNPJ>
+      <chNFe>{4}</chNFe>
+      <dhEvento>{5}</dhEvento>
+      <tpEvento>{6}</tpEvento>
+      <nSeqEvento>{7}</nSeqEvento>
+      <verEvento>{8}</verEvento>
+      <detEvento versao='1.00'>
+        <descEvento>Ciencia da Operacao</descEvento>
+      </detEvento>
+    </infEvento>
+  </evento>
+</envEvento>", id, "91", 1, CNPJ, chaveNota, dhEvento, "210210", "1", "1.00");
+
+
+                    reader.LoadXml(xml);
+
+                    var novoReader = new XmlDocument();
+                    novoReader.LoadXml(reader.GetElementsByTagName("infEvento")[0].OuterXml);
+                    var signedXml = new SignedXml(novoReader) { SigningKey = certificado.PrivateKey };
+                    var reference = new Reference("#" + id);
+                    reference.AddTransform(new XmlDsigEnvelopedSignatureTransform());
+                    reference.AddTransform(new XmlDsigC14NTransform());
+                    signedXml.AddReference(reference);
+                    var keyInfo = new KeyInfo();
+                    keyInfo.AddClause(new KeyInfoX509Data(certificado));
+                    signedXml.KeyInfo = keyInfo;
+                    signedXml.ComputeSignature();
+                    var xmlSignature = reader.CreateElement("Signature", "http://www.w3.org/2000/09/xmldsig#");
+                    var xmlSignedInfo = signedXml.SignedInfo.GetXml();
+                    var xmlKeyInfo = signedXml.KeyInfo.GetXml();
+                    var xmlSignatureValue = reader.CreateElement("SignatureValue", xmlSignature.NamespaceURI);
+                    var signBase64 = Convert.ToBase64String(signedXml.Signature.SignatureValue);
+                    var text = reader.CreateTextNode(signBase64);
+                    xmlSignatureValue.AppendChild(text);
+                    //ORDEM DAS TAGS DAS ASSINATURAS TEM Q SER CONFORME ABAIXO
+                    xmlSignature.AppendChild(reader.ImportNode(xmlSignedInfo, true));
+                    xmlSignature.AppendChild(xmlSignatureValue);
+                    xmlSignature.AppendChild(reader.ImportNode(xmlKeyInfo, true));
+
+                    reader.GetElementsByTagName("evento")[0].AppendChild(xmlSignature);
+
+                    //ENVIAR O READER INTEIRO
+                    var ret = evento.nfeRecepcaoEvento(reader);
+
+                    if (ret != null)
+                    {
+                        var readerNovo = new XmlDocument();
+                        readerNovo.LoadXml(ret.OuterXml);
+                        var cStat = Xml.RetornaDadosTag(readerNovo, "cStat", "infEvento");
+
+                        var xMotivo = Xml.RetornaDadosTag(readerNovo, "xMotivo", "infEvento");
+                        return cStat;
+                    }
+                    else
+                        return "=1";
+                }
+                catch
+                {
+                    return "-1";
+                }
+            }
+        }
+
+        private static void BuscarNotas()
+        {
+            var nivelLog = int.Parse(ConfigurationManager.AppSettings["NivelLog"]);
+            var log = new LogBusca
+            {
+                Inicio = DateTime.Now
+            };
+
+            var diciLogs = CapturarReceita("01075021000139");
+            var dicLogsCNPJFilial = CapturarReceita("01075021000481");
+            var dicLogsCNPJFilial2 = CapturarReceita("01075021000309");
+            var diciLogsEmail = CapturarEmail();
+
+
+
+            var chaves = diciLogs.Keys.Select(x => x).ToList();
+
+            for (int i = 0; i < chaves.Count; i++)
+            {
+                diciLogs[chaves[i]].AddRange(diciLogsEmail[chaves[i]]);
+                diciLogs[chaves[i]].AddRange(dicLogsCNPJFilial[chaves[i]]);
+            }
+
+            for (int i = 0; i < chaves.Count; i++)
+            {
+                if (chaves[i] > nivelLog)
+                    diciLogs.Remove(chaves[i]);
+            }
+
+            log.Descricao = MontarHtmlLog(diciLogs);
+            log.Resultado = diciLogs[((int)LogBusca.eResultado.Erro)].Any() ? LogBusca.eResultado.Erro : diciLogs[((int)LogBusca.eResultado.Alerta)].Any() ? LogBusca.eResultado.Alerta : LogBusca.eResultado.Sucesso;
+            log.Fim = DateTime.Now;
+            log.Criado = DateTime.Now;
+            log.Autor = "Captura XML";
+            log.Editor = "Captura XML";
+            log.Modificado = DateTime.Now;
+            new ManterBase<LogBusca>().Inserir(log);
+
+
+        }
+
+        private static string MontarHtmlLog(Dictionary<int, List<string>> diciLogs)
+        {
+            var html = new StringBuilder("<ul>");
+            var chaves = diciLogs.Keys.Select(x => x).ToList();
+            for (int i = 0; i < chaves.Count; i++)
+            {
+                var li = new StringBuilder($"<li><h3>{((LogBusca.eResultado)chaves[i]).ToString()}</h1><ul>");
+                var mensagens = diciLogs[chaves[i]];
+
+                for (int e = 0; e < mensagens.Count; e++)
+                    li.Append($"<li>{mensagens[e]}</li>");
+
+                li.Append("</ul></li>");
+                html.Append(li);
+            }
+            html.Append("</ul>");
+
+            return html.ToString();
+        }
+
+        private static Dictionary<int, List<string>> CapturarReceita(string CNPJ, string chaveNFE = "")
+        {
+            var logs = new Dictionary<int, List<string>>
+            {
+                {(int)LogBusca.eResultado.Erro, new List<string>() },
+                {(int)LogBusca.eResultado.Sucesso, new List<string>() },
+                {(int)LogBusca.eResultado.Alerta, new List<string>() }
+            };
+
+            var reader = new XmlDocument();
+            using (var nfe = new NFeDistribuicaoDFe())
+            {
+                var caminhoCertificado = ConfigurationManager.AppSettings["CaminhoCertificado"];
+                var senhaCertificado = ConfigurationManager.AppSettings["SenhaCertificado"];
+                try
+                {
+                    var _x509Cert = new X509Certificate2(caminhoCertificado, senhaCertificado, X509KeyStorageFlags.MachineKeySet);
+                    nfe.ClientCertificates.Add(_x509Cert);
+                    logs[(int)LogBusca.eResultado.Sucesso].Add($"Carregado certificado do caminho '{caminhoCertificado}'");
+                }
+                catch (Exception ex)
+                {
+                    logs[(int)LogBusca.eResultado.Erro].Add($"Erro ao carregar certificado do caminho '{caminhoCertificado}', Erro: {ex.Message} , {ex.InnerException}");
+                }
+
+                nfe.SoapVersion = System.Web.Services.Protocols.SoapProtocolVersion.Soap12;
+                ServicePointManager.ServerCertificateValidationCallback +=
+                    (sender, certificate, chain, sslPolicyErrors) => true;
+
+                XmlDocument xmlConsulta = new XmlDocument();
+
+                var ultimo = false;
+                var nsu = string.IsNullOrWhiteSpace(ConfigurationManager.AppSettings["ultimoNSU"]) ? "000000000000000" : ConfigurationManager.AppSettings["ultimoNSU"];
+
+                logs[(int)LogBusca.eResultado.Alerta].Add($"Comaçando a capturar dados receita, último NSU {nsu}");
+
+                var countTentativas = 0;
+                while (!ultimo && countTentativas < 5)
+                {
+                    try
+                    {
+                        string xml;
+                        if (string.IsNullOrWhiteSpace(chaveNFE))
+                            xml = $"<?xml version='1.0' encoding='UTF-8'?><distDFeInt xmlns='http://www.portalfiscal.inf.br/nfe' versao='1.01'><tpAmb>1</tpAmb><CNPJ>{CNPJ}</CNPJ><distNSU><ultNSU>{nsu}</ultNSU></distNSU></distDFeInt>";
+                        else
+                        {
+                            
+                                //Consulta por chave
+                                xml = $"<?xml version='1.0' encoding='UTF-8'?><distDFeInt xmlns='http://www.portalfiscal.inf.br/nfe' versao='1.01'><tpAmb>1</tpAmb><CNPJ>{CNPJ}</CNPJ><consChNFe><chNFe>35190543283811003680550010005952181307868484</chNFe></consChNFe></distDFeInt>";
+                            ultimo = true;
+                            }
+
+                        //var xml = $"<?xml version='1.0' encoding='UTF-8'?><distDFeInt xmlns='http://www.portalfiscal.inf.br/nfe' versao='1.01'><tpAmb>1</tpAmb><cUFAutor>35</cUFAutor><CNPJ>02460761000151</CNPJ><consNSU><NSU>000000000015487</NSU></consNSU></distDFeInt>";
+                        xmlConsulta.LoadXml(xml);
+                        var ret = nfe.nfeDistDFeInteresse(xmlConsulta.DocumentElement);
+
+                        var refazer = ProcessarRetorno(logs, ref ultimo, ref nsu, ret, CNPJ);
+                        while (refazer)
+                        {
+                            ret = nfe.nfeDistDFeInteresse(xmlConsulta.DocumentElement);
+                            refazer = ProcessarRetorno(logs, ref ultimo, ref nsu, ret, CNPJ);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logs[(int)LogBusca.eResultado.Erro].Add($"Erro ao buscar notas destinadas, Erro: {ex.Message} , {ex.InnerException}");
+                        countTentativas++;
+                    }
+                }
+
+                if (countTentativas == 5)
+                {
+                    logs[(int)LogBusca.eResultado.Erro].Add($"Erro ao buscar notas destinadas,número máximo de tentativas atingidas");
+                }
+                if (string.IsNullOrWhiteSpace(chaveNFE))
+                {
+                    var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                    var configuracoes = config.AppSettings;
+                    configuracoes.Settings["ultimoNSU"].Value = nsu;
+                    config.Save(ConfigurationSaveMode.Modified);
+                    Console.WriteLine($"Ultimo nsu da captura { nsu }");
+
+
+                    logs[(int)LogBusca.eResultado.Alerta].Add($"Ultimo nsu da captura { nsu }");
+                }
+            }
+
+            return logs;
+        }
+
+        public static bool ProcessarRetorno(Dictionary<int, List<string>> logs, ref bool ultimo, ref string nsu, XmlNode ret, string CNPJ)
+        {
+            if (ret.ChildNodes.Count > 0)
+            {
+                var readerResultado = new XmlDocument();
+                readerResultado.LoadXml(ret.OuterXml);
+
+                nsu = Xml.RetornaDadosTag(readerResultado, "ultNSU");
+                if (!string.IsNullOrWhiteSpace(nsu))
+                {
+                    Console.WriteLine("Consultando nsu" + nsu);
+                    var maxNsu = Xml.RetornaDadosTag(readerResultado, "maxNSU");
+
+                    logs[(int)LogBusca.eResultado.Alerta].Add($"Máximo nsu:{maxNsu}");
+
+                    if (nsu == maxNsu)
+                        ultimo = true;
+                }
+                var caminho = Path.Combine("C:\\TEMP\\", (string.IsNullOrWhiteSpace(nsu) ? "temp" : nsu) + ".xml");
+
+                readerResultado.Save(caminho);
+                var xml1 = new XmlDocument();
+                xml1.Load(caminho);
+                var tags = xml1.GetElementsByTagName("docZip").Cast<XmlNode>().ToList();
+                for (int e = 0; e < tags.Count; e++)
+                {
+                    var data = Convert.FromBase64String(tags[e].InnerXml);
+                    var ms = new MemoryStream(data);
+                    using (var decompressionStream = new GZipStream(ms, CompressionMode.Decompress))
+                    {
+                        var procNFe = new XmlDocument();
+                        procNFe.Load(decompressionStream);
+
+                        if (procNFe.OuterXml.Contains("<nfeProc versao="))
+                        {
+                            Console.WriteLine($"Inserindo Xml  { Xml.RetornaDadosTag(procNFe, "chNFe") }");
+                            var logsSalvarXml = ManterRepositorio.SalvarXml(procNFe, Repositorio.ETipoXML.NFE);
+
+                            var chaves = logs.Keys.Select(x => x).ToList();
+                            for (int i = 0; i < chaves.Count; i++)
+                                logs[chaves[i]].AddRange(logsSalvarXml[chaves[i]]);
+
+                        }
+                        else if (procNFe.OuterXml.Contains("<resNFe"))
+                        {
+                            var status = Ciencia(Xml.RetornaDadosTag(procNFe, "chNFe"), CNPJ);
+                            //Status 650 é de falhha na ciencia de nota denegada ou cancelada, 159 operação duplicada
+                            if (status == "135" || status == "573")
+                            {
+                                Console.WriteLine("Pegando nota " + Xml.RetornaDadosTag(procNFe, "chNFe"));
+                                CapturarReceita(CNPJ, Xml.RetornaDadosTag(procNFe, "chNFe"));
+                            }
+
+                        }
+                        else
+                        {
+                            procNFe.Save("C:\\TEMP\\ARQUIVOS\\" + tags[e].Attributes[0].InnerText + ".xml");
+                            logs[(int)LogBusca.eResultado.Alerta].Add($"Arquivo interesse destinatario {tags[e].Attributes[0].InnerText} salvo");
+                        }
+                    }
+                }
+
+                File.Delete(caminho);
+            }
+            else
+                logs[(int)LogBusca.eResultado.Alerta].Add("Retorno de Notas Vazio");
+
+            return false;
+        }
+
+        private static Dictionary<int, List<string>> CapturarEmail()
+        {
+            #region PROCESSO DE CARGA DE EMAIL
+            try
+            {
+                var mail = new Mail
+                {
+                    host = ConfigurationManager.AppSettings["hostEntrada"],
+                    porta = ConfigurationManager.AppSettings["portaEntrada"],
+                    seguranca = ConfigurationManager.AppSettings["segurancaEntrada"],
+                    mailBox = ConfigurationManager.AppSettings["mailbox"],
+                    password = ConfigurationManager.AppSettings["password"],
+                    diretorio = ConfigurationManager.AppSettings["pathXMLFiles"],
+                    dataEntrada = DateTime.Parse(ConfigurationManager.AppSettings["ultimaCarga"]),
+                };
+
+                return mail.CarregarNotas();
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            #endregion
+        }
+    }
+}
+

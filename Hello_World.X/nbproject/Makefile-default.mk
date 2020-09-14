@@ -57,17 +57,17 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Source Files Quoted if spaced
-SOURCEFILES_QUOTED_IF_SPACED=blink.asm
+SOURCEFILES_QUOTED_IF_SPACED=source_file_aula37.asm
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/blink.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/blink.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/source_file_aula37.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/source_file_aula37.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/blink.o
+OBJECTFILES=${OBJECTDIR}/source_file_aula37.o
 
 # Source Files
-SOURCEFILES=blink.asm
+SOURCEFILES=source_file_aula37.asm
 
 
 
@@ -95,22 +95,22 @@ MP_LINKER_DEBUG_OPTION=
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: assemble
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-${OBJECTDIR}/blink.o: blink.asm  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/source_file_aula37.o: source_file_aula37.asm  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/blink.o.d 
-	@${RM} ${OBJECTDIR}/blink.o 
-	@${FIXDEPS} dummy.d -e "${OBJECTDIR}/blink.err" $(SILENT) -c ${MP_AS} $(MP_EXTRA_AS_PRE) -d__DEBUG -d__MPLAB_DEBUGGER_SIMULATOR=1 -q -p$(MP_PROCESSOR_OPTION) -u  -l\\\"${OBJECTDIR}/blink.lst\\\" -e\\\"${OBJECTDIR}/blink.err\\\" $(ASM_OPTIONS)    -o\\\"${OBJECTDIR}/blink.o\\\" \\\"blink.asm\\\" 
-	@${DEP_GEN} -d "${OBJECTDIR}/blink.o"
-	@${FIXDEPS} "${OBJECTDIR}/blink.o.d" $(SILENT) -rsi ${MP_AS_DIR} -c18 
+	@${RM} ${OBJECTDIR}/source_file_aula37.o.d 
+	@${RM} ${OBJECTDIR}/source_file_aula37.o 
+	@${FIXDEPS} dummy.d -e "${OBJECTDIR}/source_file_aula37.err" $(SILENT) -c ${MP_AS} $(MP_EXTRA_AS_PRE) -d__DEBUG -d__MPLAB_DEBUGGER_SIMULATOR=1 -q -p$(MP_PROCESSOR_OPTION) -u  -l\\\"${OBJECTDIR}/source_file_aula37.lst\\\" -e\\\"${OBJECTDIR}/source_file_aula37.err\\\" $(ASM_OPTIONS)    -o\\\"${OBJECTDIR}/source_file_aula37.o\\\" \\\"source_file_aula37.asm\\\" 
+	@${DEP_GEN} -d "${OBJECTDIR}/source_file_aula37.o"
+	@${FIXDEPS} "${OBJECTDIR}/source_file_aula37.o.d" $(SILENT) -rsi ${MP_AS_DIR} -c18 
 	
 else
-${OBJECTDIR}/blink.o: blink.asm  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/source_file_aula37.o: source_file_aula37.asm  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} "${OBJECTDIR}" 
-	@${RM} ${OBJECTDIR}/blink.o.d 
-	@${RM} ${OBJECTDIR}/blink.o 
-	@${FIXDEPS} dummy.d -e "${OBJECTDIR}/blink.err" $(SILENT) -c ${MP_AS} $(MP_EXTRA_AS_PRE) -q -p$(MP_PROCESSOR_OPTION) -u  -l\\\"${OBJECTDIR}/blink.lst\\\" -e\\\"${OBJECTDIR}/blink.err\\\" $(ASM_OPTIONS)    -o\\\"${OBJECTDIR}/blink.o\\\" \\\"blink.asm\\\" 
-	@${DEP_GEN} -d "${OBJECTDIR}/blink.o"
-	@${FIXDEPS} "${OBJECTDIR}/blink.o.d" $(SILENT) -rsi ${MP_AS_DIR} -c18 
+	@${RM} ${OBJECTDIR}/source_file_aula37.o.d 
+	@${RM} ${OBJECTDIR}/source_file_aula37.o 
+	@${FIXDEPS} dummy.d -e "${OBJECTDIR}/source_file_aula37.err" $(SILENT) -c ${MP_AS} $(MP_EXTRA_AS_PRE) -q -p$(MP_PROCESSOR_OPTION) -u  -l\\\"${OBJECTDIR}/source_file_aula37.lst\\\" -e\\\"${OBJECTDIR}/source_file_aula37.err\\\" $(ASM_OPTIONS)    -o\\\"${OBJECTDIR}/source_file_aula37.o\\\" \\\"source_file_aula37.asm\\\" 
+	@${DEP_GEN} -d "${OBJECTDIR}/source_file_aula37.o"
+	@${FIXDEPS} "${OBJECTDIR}/source_file_aula37.o.d" $(SILENT) -rsi ${MP_AS_DIR} -c18 
 	
 endif
 
